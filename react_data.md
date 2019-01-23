@@ -97,8 +97,8 @@ react是一个单向数据流的框架，只有父级向子级通过props传递�
         const {data = [],page} = this.props
         const activeKey = typeof page === "undefined" ? this.state.activeKey : page
         return(
-            <View style={{flex:1}}>
-              <View style={{flexDirection: "row",borderColor:styleObj.border_color_base,borderBottomWidth: 1}}>
+            <View>
+              <View>
                 {
                   data.map((v,k)=>{
                     const active = activeKey === k
@@ -112,7 +112,7 @@ react是一个单向数据流的框架，只有父级向子级通过props传递�
                   })
                 }
               </View>
-              <View style={{flex:1}}>
+              <View>
                 {this.props.children[activeKey]}
               </View>
             </View>
