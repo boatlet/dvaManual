@@ -60,7 +60,7 @@ react是一个单向数据流的框架，只有父级向子级通过props传递�
 
 ## 组件自身的state
 ### 和组件自身高度相关的数据
-只在本组件或其子组件用到的数据就可以存在组件自身的state里，其实并不是不能放在store只是，如果store太大，modal太长，对于管理，维护和代码的查找来说都是很不好的体验，所以和组件高度相关的数据建议放在组件自身的state里。
+只在本组件或其子组件用到的数据就可以存在组件自身的state里，其实并不是不能放在store，只是如果store太大，modal太长，对于管理，维护和代码的查找来说都是很不好的体验，所以和组件高度相关的数据建议放在组件自身的state里。
 
     class User extend React.Component{
         state = {userInfo:{}}
@@ -76,7 +76,7 @@ react是一个单向数据流的框架，只有父级向子级通过props传递�
     }
 
 ### 组件状态
-组件独有的状态数据，比如选项卡组件里面的activeKey,或是具有展开收起的展开收起状态等
+组件独有的状态数据，比如选项卡组件里面的activeKey,或是具有展开收起功能的展开收起状态等
     
     /**
      * 选项卡组件
@@ -125,7 +125,27 @@ react是一个单向数据流的框架，只有父级向子级通过props传递�
 # 数据的获取
 ## effects
 effects的本质是dva集成的[redux-saga](conception.md#redux-saga),通过generator来将异步的方法改造成同步的方法，同时可以根据状态来调用多个reducer，
-所以需要修改
+effects的获取到的数据一般通过put方法调用reducer来保存再store里。
+
+    /**
+     * 选择店铺的页面的数据初始化
+     * @param payload
+     * @param call
+     * @param put
+     * @param select
+     * @returns {IterableIterator<*>}
+     */
+    *shopManageInit({payload},{call,put,select}){
+      //从store中拿到当前的登录的用户数据
+      const user = yield select(state=>state.app.get("currentUser"))
+      //获取该用户下绑定的店铺列表和被邀请的列表
+      const shops = yield call(fetch,httpConfig.getShopByUserId,{data:{userId:global.userId}})
+      const inviteShops = yield call(fetch,httpConfig.getInviteList,{data:{inviteMobile:user.mobile}})
+      //获取该收银机绑定的店铺
+      const devicesOfShopData = yield call(fetch,httpConfig.getDeviceData, {data:{deviceName:global.deviceName}})
+      //把以上数据保存到store中
+      yield put({type:"setShopManageData",payload:{shops,inviteShops:inviteShops.list,devicesOfShop:devicesOfShopData.list}})
+    },
 
 ### 可能会被重复调用的行为
 比如注销，有些应用可能不止一个注销入口，但是注销流程基本一致，这种情况下，写在effects里，有利于行为的重复使用。
@@ -227,6 +247,18 @@ effects的本质是dva集成的[redux-saga](conception.md#redux-saga),通过gene
 当你的需要数据不是存在store里，而是在组件自身的state里时，请求也只能写在组件里了，如果是那种需要一开始就请求的数据，一般都是写在componentDidMount，而不是constructor里面，一个是为了提高首次响应的时间，
 二是万一请求的数据返回了，而首次render都还没开始，（虽然不太可能），可能在回调里有些操作就会有问题了。
 
+    class User extend React.Component{
+            state = {userInfo:{}}
+            componentDidMount(){
+                fetch(httpConfig.getUserInfo).then(res=>this.setState({userInfo:res.data}))
+            }
+            render(){
+                return (
+                    userInfo.avatar 
+                    ...
+                )
+            }
+        }
 
 # redux的reducer的职责
 reducer是redux规定的唯一可以修改state的地方，并且要求reducer要是没有副作用的纯函数，所以大部分情况下reducer就只是简单的把数据merge到state中。
